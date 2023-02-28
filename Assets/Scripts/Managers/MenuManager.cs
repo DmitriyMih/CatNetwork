@@ -1,17 +1,28 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using Unity.Netcode;
+using UnityEngine.UI;
 
 public class MenuManager : MonoBehaviour
 {
-    public void OnClickHost()
+    [SerializeField] private Button hostButton;
+    [SerializeField] private Button joinButton;
+    [SerializeField] private Button qutButton;
+
+    private void OnClickHost()
     {
+
         NetworkManager.Singleton.StartHost();
     }
 
-    public void OnClickJoin()
+    private void OnClickJoin()
     {
-        NetworkManager.Singleton.StartHost();
+        if (joinButton != null)
+            NetworkManager.Singleton.StartClient();
+
+    }
+
+    private void Quit()
+    {
+        Application.Quit();
     }
 }

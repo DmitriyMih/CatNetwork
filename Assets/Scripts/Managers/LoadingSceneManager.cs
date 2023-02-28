@@ -8,12 +8,15 @@ public enum SceneName : byte
 {
     Menu,
     CharacterSelection,
-    Gameplay,
-    Victory,
-    Defeat
+    Gameplay
 };
 
 public class LoadingSceneManager : SingletonPersistent<LoadingSceneManager>
 {
-  
+    [SerializeField] private Scene scene;
+
+    public void loadScene(SceneName sceneName)
+    {
+
+    }
 }
