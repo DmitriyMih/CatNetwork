@@ -30,7 +30,7 @@ public class HidePasswordToggle : MonoBehaviour
 
         if (passwordInputField != null)
         {
-            passwordInputField.contentType = !isHide ? TMP_InputField.ContentType.Password : TMP_InputField.ContentType.Standard;
+            passwordInputField.contentType = !isHide ? TMP_InputField.ContentType.Pin : TMP_InputField.ContentType.IntegerNumber;
             passwordInputField.ForceLabelUpdate();
         }
     }
