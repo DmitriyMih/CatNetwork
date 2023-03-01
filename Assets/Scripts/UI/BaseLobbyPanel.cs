@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -6,17 +7,20 @@ using UnityEngine.UI;
 public class BaseLobbyPanel : MonoBehaviour
 {
     [SerializeField] private Selectable firstSelectable;
+    [SerializeField] private GameObject content;
 
     protected virtual void Awake()
     {
+        content = transform.GetChild(0).gameObject;
         HidePanel();
     }
 
     public virtual void ShowPanel()
     {
-        LobbyPanelsManager.Instance.HideAction = HidePanel;
+        if (LobbyPanelsManager.Instance != null)
+            LobbyPanelsManager.Instance.HideAction = HidePanel;
 
-        gameObject.SetActive(true);
+        content.SetActive(true);
 
         if (firstSelectable != null)
             firstSelectable.Select();
@@ -24,6 +28,6 @@ public class BaseLobbyPanel : MonoBehaviour
 
     protected virtual void HidePanel()
     {
-        gameObject.SetActive(false);
+        content.SetActive(false);
     }
 }
