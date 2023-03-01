@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -11,6 +9,13 @@ public class AccessToggle : MonoBehaviour
     private TextMeshProUGUI buttonText;
 
     [SerializeField] private bool isPublic;
+    [SerializeField] private CanvasGroup canvasGroup;
+
+    [Header("Navigation")]
+    [SerializeField] private Button firstButton;
+    [SerializeField] private Button secondButton;
+
+    [SerializeField] private Selectable analogSelectPath;
 
     private void Awake()
     {
@@ -27,7 +32,7 @@ public class AccessToggle : MonoBehaviour
 
     private void ChangeValue()
     {
-        isPublic = !isPublic; 
+        isPublic = !isPublic;
         UpdateInfoText();
     }
 
@@ -36,5 +41,27 @@ public class AccessToggle : MonoBehaviour
         if (buttonText != null)
             buttonText.text = isPublic ? "Public" : "Private";
         else Debug.Log("Button Text " % Colorize.Yellow % FontFormat.Bold + "| Is Null |" % Colorize.Red % FontFormat.Bold);
+
+        if (canvasGroup != null)
+        {
+            canvasGroup.alpha = isPublic ? 1f : 0.5f;
+            canvasGroup.interactable = isPublic;
+        }
+
+        UpdateNavigation();
+    }
+
+    private void UpdateNavigation()
+    {
+        if (firstButton == null || secondButton == null || analogSelectPath == null)
+            return;
+
+        Navigation navigationA = firstButton.navigation;
+        navigationA.selectOnDown = isPublic ? analogSelectPath : secondButton;
+        firstButton.navigation = navigationA;
+
+        Navigation navigationB = secondButton.navigation;
+        navigationB.selectOnUp = isPublic ? analogSelectPath : firstButton;
+        secondButton.navigation = navigationB;
     }
 }
