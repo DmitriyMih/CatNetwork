@@ -64,4 +64,9 @@ public class AccessToggle : MonoBehaviour
         navigationB.selectOnUp = isPublic ? analogSelectPath : firstButton;
         secondButton.navigation = navigationB;
     }
+
+    public bool GetAccessState()
+    {
+        return isPublic;
+    }
 }

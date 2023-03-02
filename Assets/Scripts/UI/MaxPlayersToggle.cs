@@ -39,4 +39,9 @@ public class MaxPlayersToggle : MonoBehaviour
             playersCountText.text = $"{currentPlayersCount}";
         else Debug.Log("Players Count Text " % Colorize.Yellow % FontFormat.Bold + "| Is Null |" % Colorize.Red % FontFormat.Bold);
     }
+
+    public int GetMaxPlayersCount()
+    {
+        return currentPlayersCount;
+    }
 }

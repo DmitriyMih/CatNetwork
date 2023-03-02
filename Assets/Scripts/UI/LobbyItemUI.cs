@@ -1,6 +1,6 @@
-using System.Collections;
-using System.Collections.Generic;
+using System;
 using UnityEngine;
+using UnityEngine.UI;
 using TMPro;
 
 public class LobbyItemUI : MonoBehaviour
@@ -10,18 +10,31 @@ public class LobbyItemUI : MonoBehaviour
     [SerializeField] private TextMeshProUGUI ownerNameText;
 
     [SerializeField] private int playersMaxCount;
+    private Button enterButton;
 
-    public void Initialization(string lobbyName, string ownerName, int maxCount)
+    [Header("Panel Data")]
+    [SerializeField] private LobbySettingsSO lobbySettingsSO;
+
+    private void Awake()
     {
-        playersMaxCount = maxCount;
+        enterButton = GetComponentInChildren<Button>();
+    }
+
+    public void InitializationPanel(LobbySettingsSO lobbySettingsSO)
+    {
+        this.lobbySettingsSO = lobbySettingsSO;
 
         if (lobbyNameText != null)
-            lobbyNameText.text = lobbyName;
+            lobbyNameText.text = lobbySettingsSO.lobbyName;
         else Debug.Log("Lobby Name Text " % Colorize.Yellow % FontFormat.Bold + "| Is Null |" % Colorize.Red % FontFormat.Bold);
      
         if (ownerNameText != null)
-            ownerNameText.text = lobbyName;
+            ownerNameText.text = lobbySettingsSO.ownerName;
         else Debug.Log("Owner Name Text " % Colorize.Yellow % FontFormat.Bold + "| Is Null |" % Colorize.Red % FontFormat.Bold);
+
+        if (enterButton != null)
+            enterButton.onClick.AddListener(() => EnterButtonOnClicked());
+        else Debug.Log("Enter Button Action " % Colorize.Yellow % FontFormat.Bold + "| Is Null |" % Colorize.Red % FontFormat.Bold);
     }
 
     public void UpdatePlayersCount(int newValue)
@@ -29,5 +42,14 @@ public class LobbyItemUI : MonoBehaviour
         if (playersCountText != null)
             playersCountText.text = $"{newValue}/{playersMaxCount}";
         else Debug.Log("Players Count Text " % Colorize.Yellow % FontFormat.Bold + "| Is Null |" % Colorize.Red % FontFormat.Bold);
+    }
+
+    private void EnterButtonOnClicked()
+    {
+        if (LobbyPanelsManager.Instance == null)
+            return;
+
+        LobbyPanel lobbyPanel = !lobbySettingsSO.isPublic ? LobbyPanel.PasswordPanel : LobbyPanel.LobbyPanel;
+        LobbyPanelsManager.Instance.LoadPanel(lobbyPanel);
     }
 }

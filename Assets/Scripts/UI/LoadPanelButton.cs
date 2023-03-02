@@ -7,7 +7,7 @@ using UnityEngine.UI;
 public class LoadPanelButton : MonoBehaviour
 {
     private Button loadButton;
-    [SerializeField] private LobbyPanels nextLobbyPanel;
+    [SerializeField] private LobbyPanel nextLobbyPanel;
 
     private void Awake()
     {

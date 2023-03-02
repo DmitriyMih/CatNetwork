@@ -10,9 +10,6 @@ public class MyDebug : MonoBehaviour
 
     private void Awake()
     {
-        if (createLobbyButton != null)
-            createLobbyButton.onClick.AddListener(() => LobbyManager.Instance.CreateLobby());
-
         if (showLobbiesButton != null)
             showLobbiesButton.onClick.AddListener(() => LobbyManager.Instance.ListLobbies());
     }

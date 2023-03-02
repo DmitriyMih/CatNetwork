@@ -7,37 +7,46 @@ public class LobbyPanelsManager : Singleton<LobbyPanelsManager>
 {
     public Action HideAction;
 
+
     [Space(15)]
     [SerializeField] private BaseLobbyPanel lobbyListPanel;
     [SerializeField] private BaseLobbyPanel createLobbyPanel;
+    [SerializeField] private BaseLobbyPanel passwordPanel;
     [SerializeField] private BaseLobbyPanel lobbyPanel;
 
     private void Start()
     {
-        LoadPanel(LobbyPanels.LobbyListPanel);
+        LoadPanel(LobbyPanel.LobbyListPanel);
     }
 
-    public void LoadPanel(LobbyPanels lobbyPanels)
+    public void LoadPanel(LobbyPanel lobbyPanels)
     {
         Hide();
 
         switch (lobbyPanels)
         {
-            case LobbyPanels.LobbyListPanel:
+            case LobbyPanel.LobbyListPanel:
                 if (lobbyListPanel == null)
                     return;
 
                 lobbyListPanel.ShowPanel();
                 break;
 
-            case LobbyPanels.CreateLobbyPanel:
+            case LobbyPanel.CreateLobbyPanel:
                 if (createLobbyPanel == null)
                     return;
 
                 createLobbyPanel.ShowPanel();
                 break;
 
-            case LobbyPanels.Lobby:
+            case LobbyPanel.PasswordPanel:
+                if (passwordPanel == null)
+                    return;
+
+                passwordPanel.ShowPanel();
+                break;
+
+            case LobbyPanel.LobbyPanel:
                 if (lobbyPanel == null)
                     return;
 
@@ -56,9 +65,10 @@ public class LobbyPanelsManager : Singleton<LobbyPanelsManager>
     }
 }
 
-public enum LobbyPanels
+public enum LobbyPanel
 {
     LobbyListPanel,
     CreateLobbyPanel,
-    Lobby
+    PasswordPanel,
+    LobbyPanel
 }
