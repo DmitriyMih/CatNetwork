@@ -5,7 +5,7 @@ using UnityEngine;
 
 [Serializable]
 [CreateAssetMenu()]
-public class LobbySettingsSO : ScriptableObject
+public class LobbySettingsSO 
 {
     public string lobbyName;
     public string ownerName;

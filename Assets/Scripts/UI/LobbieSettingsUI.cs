@@ -28,11 +28,6 @@ public class LobbieSettingsUI : MonoBehaviour
     [SerializeField] private TMP_InputField passwordInputField;
 
     [Header("Lobby Data"), Space()]
-    [SerializeField] private string lobbyName;
-    [SerializeField] private bool isPublic;
-    [SerializeField] private string playersMaxCount;
-    [SerializeField] private string ownerName;
-
     [SerializeField] private LobbySettingsSO lobbySettings;
 
     private void Awake()
