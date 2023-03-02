@@ -9,6 +9,8 @@ using UnityEngine;
 public class LobbyManager : Singleton<LobbyManager>
 {
     private Lobby hostLobby;
+    private Lobby joinedLobby;
+
     private float heartbeatTimerMax = 15f;
     private float heartbeatTimer;
 
@@ -53,18 +55,20 @@ public class LobbyManager : Singleton<LobbyManager>
         {
             CreateLobbyOptions createLobbyOptions = new CreateLobbyOptions
             {
-                IsPrivate = lobbySettingsSO.isPublic,
+                IsPrivate = !lobbySettingsSO.isPublic,
                 Player = GetPlayer(),
                 Data = new Dictionary<string, DataObject>
                 {
-                    { "GameMode", new DataObject(DataObject.VisibilityOptions.Public, "FastMode", DataObject.IndexOptions.S1)}
+                    { "Map", new DataObject(DataObject.VisibilityOptions.Public, "First_Map", DataObject.IndexOptions.S1)}
                 }
             };
 
             Lobby lobby = await LobbyService.Instance.CreateLobbyAsync(lobbySettingsSO.lobbyName, lobbySettingsSO.playersMaxCount, createLobbyOptions);
-            Debug.Log($"Create Lobby! {lobby.Name} | Players Max { lobby.MaxPlayers} | Lobby ID: {lobby.Id} | Lobby Code {lobby.LobbyCode}" % Colorize.Green % FontFormat.Bold);
+            Debug.Log($"Create Lobby! {lobby.Name} | Map {lobby.Data["Map"].Value} | Players Max { lobby.MaxPlayers} | Lobby ID: {lobby.Id} | Lobby Code {lobby.LobbyCode}" % Colorize.Green % FontFormat.Bold);
 
             hostLobby = lobby;
+            joinedLobby = hostLobby;
+
             PrintPlayers(hostLobby);
         }
         catch (LobbyServiceException e)
@@ -100,8 +104,8 @@ public class LobbyManager : Singleton<LobbyManager>
                 Count = 25,
                 Filters = new List<QueryFilter>
                 {
-                    new QueryFilter(QueryFilter.FieldOptions.AvailableSlots, "0", QueryFilter.OpOptions.GT),
-                    new QueryFilter(QueryFilter.FieldOptions.S1, "FastMode", QueryFilter.OpOptions.EQ)
+                    new QueryFilter(QueryFilter.FieldOptions.AvailableSlots, "0", QueryFilter.OpOptions.GT)
+                    //new QueryFilter(QueryFilter.FieldOptions.S1, "First_Map", QueryFilter.OpOptions.EQ)
                 },
                 Order = new List<QueryOrder>
                 {
@@ -113,7 +117,7 @@ public class LobbyManager : Singleton<LobbyManager>
 
             Debug.Log("Lobbies Found: " + queryResponse.Results.Count.ToString() % Colorize.Yellow % FontFormat.Bold);
             for (int i = 0; i < queryResponse.Results.Count; i++)
-                Debug.Log($"{i + 1}: Lobby Name: {queryResponse.Results[i].Name} | Lobby Mode {queryResponse.Results[i].Data["GameMode"].Value}| " % Colorize.Yellow % FontFormat.Bold + $"Players: {queryResponse.Results[i].Players.Count}/{queryResponse.Results[i].MaxPlayers}" % Colorize.Green % FontFormat.Bold);
+                Debug.Log($"{i + 1}: Lobby Name: {queryResponse.Results[i].Name} | Lobby Mode {queryResponse.Results[i].Data["Map"].Value}| " % Colorize.Yellow % FontFormat.Bold + $"Players: {queryResponse.Results[i].Players.Count}/{queryResponse.Results[i].MaxPlayers}" % Colorize.Green % FontFormat.Bold);
         }
         catch (LobbyServiceException e)
         {
@@ -152,10 +156,11 @@ public class LobbyManager : Singleton<LobbyManager>
             {
                 Player = GetPlayer()
             };
-            Lobby joinedLobby = await Lobbies.Instance.JoinLobbyByCodeAsync(lobbyCode, joinLobbyByCodeOptions);
+            Lobby lobby = await Lobbies.Instance.JoinLobbyByCodeAsync(lobbyCode, joinLobbyByCodeOptions);
+            joinedLobby = lobby;
 
             Debug.Log($"Joined Lobby With Code: {lobbyCode}" % Colorize.Green % FontFormat.Bold);
-            PrintPlayers(joinedLobby);
+            PrintPlayers(lobby);
         }
         catch (LobbyServiceException e)
         {
@@ -184,9 +189,14 @@ public class LobbyManager : Singleton<LobbyManager>
         };
     }
 
+    public void PrintPlayers()
+    {
+        PrintPlayers(joinedLobby);
+    }
+
     private void PrintPlayers(Lobby lobby)
     {
-        Debug.Log($"Players In Lobby: {lobby.Name} | Game Mode {lobby.Data["GameMode"].Value}");
+        Debug.Log($"Players In Lobby: {lobby.Name} | Game Mode {lobby.Data["Map"].Value}");
         foreach (Player player in lobby.Players)
             Debug.Log(player.Id % Colorize.Yellow % FontFormat.Bold + " " + player.Data["PlayerName"].Value % Colorize.Green % FontFormat.Bold);
     }

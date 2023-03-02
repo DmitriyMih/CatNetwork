@@ -10,6 +10,8 @@ public class MyDebug : MonoBehaviour
     [SerializeField] private Button showAllLobbies;
     [SerializeField] private TMP_InputField inputField;
 
+    [SerializeField] private Button printPlayersButton;
+
     [SerializeField] private string lobbyCode;
 
     private void Awake()
@@ -22,6 +24,9 @@ public class MyDebug : MonoBehaviour
 
         if (showAllLobbies != null)
             showAllLobbies.onClick.AddListener(() => LobbyManager.Instance.ShowListFiltersLobbies());
+
+        if (printPlayersButton != null)
+            printPlayersButton.onClick.AddListener(() => LobbyManager.Instance.PrintPlayers());
     }
 
     private void SetLobbyCode(string newCode)
