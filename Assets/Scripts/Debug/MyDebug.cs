@@ -2,15 +2,30 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 public class MyDebug : MonoBehaviour
 {
-    [SerializeField] private Button createLobbyButton;
-    [SerializeField] private Button showLobbiesButton;
+    [SerializeField] private Button joinByCode;
+    [SerializeField] private Button showAllLobbies;
+    [SerializeField] private TMP_InputField inputField;
+
+    [SerializeField] private string lobbyCode;
 
     private void Awake()
     {
-        if (showLobbiesButton != null)
-            showLobbiesButton.onClick.AddListener(() => LobbyManager.Instance.ListLobbies());
+        if (joinByCode != null)
+            joinByCode.onClick.AddListener(() => LobbyManager.Instance.JoinLobbyByCode(lobbyCode));
+
+        if (inputField != null)
+            inputField.onEndEdit.AddListener((value) => SetLobbyCode(value));
+
+        if (showAllLobbies != null)
+            showAllLobbies.onClick.AddListener(() => LobbyManager.Instance.ShowListFiltersLobbies());
+    }
+
+    private void SetLobbyCode(string newCode)
+    {
+        lobbyCode = newCode.ToUpper();
     }
 }

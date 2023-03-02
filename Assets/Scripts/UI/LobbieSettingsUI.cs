@@ -44,7 +44,7 @@ public class LobbieSettingsUI : MonoBehaviour
 
         if (lobbyNameInputField != null)
         {
-            string outString = lobbyNameInputField.text;
+            string outString = lobbyNameInputField.text.ToUpper();
             if (outString != "")
                 lobbySettingsSO.lobbyName = outString;
             else
@@ -82,7 +82,7 @@ public class LobbieSettingsUI : MonoBehaviour
             Debug.Log("Check");
             if (passwordInputField != null)
             {
-                string outPassword = passwordInputField.text;
+                string outPassword = passwordInputField.text.ToUpper();
                 if (outPassword != "")
                     lobbySettingsSO.password = outPassword;
                 else
@@ -112,8 +112,12 @@ public class LobbieSettingsUI : MonoBehaviour
             isChecks = false;
         }
 
-        lobbySettings = lobbySettingsSO;
         Debug.Log("Is Check: " + isChecks);
+        if (!isChecks)
+            return;
+
+        lobbySettings = lobbySettingsSO;
+        LobbyManager.Instance.CreateLobby(lobbySettingsSO);
     }
 
     private IEnumerator FadeNotice(CanvasGroup canvasGroup, float fadeTime)

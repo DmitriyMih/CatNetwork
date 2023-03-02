@@ -23,16 +23,6 @@ public class MenuManager : MonoBehaviour
         LoadingSceneManager.Instance.LoadScene(SceneName.LobbySelection);
     }
 
-    private void OnClickHost()
-    {
-        //LobbyManager.Instance.CreateLobby();
-    }
-
-    private void OnClickJoin()
-    {
-        //NetworkManager.Singleton.StartClient();
-    }
-
     private void Quit()
     {
         Application.Quit();

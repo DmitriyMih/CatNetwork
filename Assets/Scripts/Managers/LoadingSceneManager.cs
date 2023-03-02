@@ -9,11 +9,10 @@ public enum SceneName : byte
     NextScene,
     Menu,
     LobbySelection,
-    CharacterSelection,
     Gameplay
 }
 
-public class LoadingSceneManager : SingletonPersistent<LoadingSceneManager>
+public class LoadingSceneManager : Singleton<LoadingSceneManager>
 {
     public void LoadScene(SceneName sceneName)
     {
@@ -31,16 +30,12 @@ public class LoadingSceneManager : SingletonPersistent<LoadingSceneManager>
             case SceneName.LobbySelection:
                 Load(1);
                 break;
-
-            case SceneName.CharacterSelection:
-                Load(2);
-                break;
         }
     }
 
     private void Load(int index)
     {
-        if (SceneManager.GetSceneAt(index).IsValid())
+        if (index >= SceneManager.sceneCountInBuildSettings)
         {
             Debug.Log($"Scene At: {index} | " % Colorize.Yellow % FontFormat.Bold + $"Not Found" % Colorize.Red % FontFormat.Bold);
             return;
