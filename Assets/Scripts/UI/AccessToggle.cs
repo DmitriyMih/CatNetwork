@@ -44,8 +44,8 @@ public class AccessToggle : MonoBehaviour
 
         if (canvasGroup != null)
         {
-            canvasGroup.alpha = isPublic ? 1f : 0.5f;
-            canvasGroup.interactable = isPublic;
+            canvasGroup.alpha = !isPublic ? 1f : 0.5f;
+            canvasGroup.interactable = !isPublic;
         }
 
         UpdateNavigation();

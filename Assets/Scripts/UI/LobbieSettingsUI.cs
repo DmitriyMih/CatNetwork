@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using DG.Tweening;
 
 public class LobbieSettingsUI : MonoBehaviour
 {
@@ -18,6 +19,9 @@ public class LobbieSettingsUI : MonoBehaviour
     [SerializeField] private CanvasGroup lobbyNameInputNotice;
     [SerializeField] private CanvasGroup lobbyPasswordInputNotice;
 
+    private Coroutine lobbyNameInputCorrutine;
+    private Coroutine lobbyPasswordCorrutine;
+
     [SerializeField] private float fadeTime = 1f;
 
     [SerializeField] private TMP_InputField lobbyNameInputField;
@@ -25,7 +29,7 @@ public class LobbieSettingsUI : MonoBehaviour
 
     [Header("Lobby Data"), Space()]
     [SerializeField] private string lobbyName;
-    [SerializeField] private bool isPunlic;
+    [SerializeField] private bool isPublic;
     [SerializeField] private string playersMaxCount;
     [SerializeField] private string ownerName;
 
@@ -50,7 +54,10 @@ public class LobbieSettingsUI : MonoBehaviour
                 lobbySettingsSO.lobbyName = outString;
             else
             {
-                StartCoroutine(NoticeFade(lobbyPasswordInputNotice));
+                if (lobbyNameInputCorrutine != null)
+                    StopCoroutine(lobbyNameInputCorrutine);
+
+                lobbyNameInputCorrutine = StartCoroutine(FadeNotice(lobbyNameInputNotice, fadeTime));
                 isChecks = false;
             }
 
@@ -62,37 +69,44 @@ public class LobbieSettingsUI : MonoBehaviour
             isChecks = false;
         }
 
+        bool showPassword = false;
         if (accessToggle != null)
         {
-            bool isPublic = accessToggle.GetAccessState();
-            lobbySettingsSO.isPublic = isPublic;
-
-            if (!isPublic)
-            {
-                if (passwordInputField != null)
-                {
-                    string outPassword = passwordInputField.text;
-                    if (outPassword != "")
-                        lobbySettingsSO.password = outPassword;
-                    else
-                    {
-                        StartCoroutine(NoticeFade(lobbyPasswordInputNotice));
-                        isChecks = false;
-                    }
-
-                    Debug.Log(outPassword);
-                }
-                else
-                {
-                    Debug.Log("Password Field " % Colorize.Yellow % FontFormat.Bold + "| Is Null |" % Colorize.Red % FontFormat.Bold);
-                    isChecks = false;
-                }
-            }
+            showPassword = accessToggle.GetAccessState();
+            lobbySettingsSO.isPublic = showPassword;
         }
         else
         {
             Debug.Log("Players Toggle " % Colorize.Yellow % FontFormat.Bold + "| Is Null |" % Colorize.Red % FontFormat.Bold);
             isChecks = false;
+        }
+
+        Debug.Log("Show Password: " + showPassword);
+        if (!showPassword)
+        {
+            Debug.Log("Check");
+            if (passwordInputField != null)
+            {
+                string outPassword = passwordInputField.text;
+                if (outPassword != "")
+                    lobbySettingsSO.password = outPassword;
+                else
+                {
+                    if (lobbyPasswordCorrutine != null)
+                        StopCoroutine(lobbyPasswordCorrutine);
+
+                    lobbyPasswordCorrutine = StartCoroutine(FadeNotice(lobbyPasswordInputNotice, fadeTime));
+                    Debug.Log("Fade Second");
+                    isChecks = false;
+                }
+
+                Debug.Log(outPassword);
+            }
+            else
+            {
+                Debug.Log("Password Field " % Colorize.Yellow % FontFormat.Bold + "| Is Null |" % Colorize.Red % FontFormat.Bold);
+                isChecks = false;
+            }
         }
 
         if (playersToggle != null)
@@ -107,9 +121,15 @@ public class LobbieSettingsUI : MonoBehaviour
         Debug.Log("Is Check: " + isChecks);
     }
 
-    private IEnumerator NoticeFade(CanvasGroup canvasGroup)
+    private IEnumerator FadeNotice(CanvasGroup canvasGroup, float fadeTime)
     {
         canvasGroup.alpha = 1f;
+        float coef = 1f / (fadeTime * Time.deltaTime);
         yield return new WaitForSeconds(fadeTime);
+
+        while (canvasGroup.alpha > 0f)
+        {
+            canvasGroup.alpha -= coef;
+        }
     }
 }
