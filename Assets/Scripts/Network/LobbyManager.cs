@@ -28,7 +28,7 @@ public class LobbyManager : Singleton<LobbyManager>
 
     [SerializeField] private string tempPlayerNameInLobby;
     [SerializeField] private string tempLobbyCode;
-
+    [SerializeField] private Dictionary<int, string> keys;
     private async void Start()
     {
         await UnityServices.InitializeAsync();
@@ -44,7 +44,8 @@ public class LobbyManager : Singleton<LobbyManager>
 
     private void Update()
     {
-        HandleLobbyHeartbeat();
+        HandleLobbyHeartbeat(); 
+        HandleLobbyPollForUpdates();
     }
 
     private async void HandleLobbyHeartbeat()
@@ -210,7 +211,10 @@ public class LobbyManager : Singleton<LobbyManager>
 
             Debug.Log("Lobbies Found: " + queryResponse.Results.Count.ToString() % Colorize.Yellow % FontFormat.Bold);
             for (int i = 0; i < queryResponse.Results.Count; i++)
+            {
                 Debug.Log($"{i + 1}: Lobby Name: {queryResponse.Results[i].Name} | Lobby Mode {queryResponse.Results[i].Data["GameMode"].Value}| " % Colorize.Yellow % FontFormat.Bold + $"Players: {queryResponse.Results[i].Players.Count}/{queryResponse.Results[i].MaxPlayers}" % Colorize.Green % FontFormat.Bold);
+                PrintPlayers(queryResponse.Results[i]);
+            }
         }
         catch (LobbyServiceException e)
         {
@@ -241,7 +245,10 @@ public class LobbyManager : Singleton<LobbyManager>
 
             Debug.Log("Lobbies Found: " + queryResponse.Results.Count.ToString() % Colorize.Yellow % FontFormat.Bold);
             for (int i = 0; i < queryResponse.Results.Count; i++)
+            {
                 Debug.Log($"{i + 1}: Lobby Name: {queryResponse.Results[i].Name} | Lobby Mode {queryResponse.Results[i].Data[LobbyMapConst].Value}| " % Colorize.Yellow % FontFormat.Bold + $"Players: {queryResponse.Results[i].Players.Count}/{queryResponse.Results[i].MaxPlayers}" % Colorize.Green % FontFormat.Bold);
+                PrintPlayers(queryResponse.Results[i]);
+            }
         }
         catch (LobbyServiceException e)
         {
@@ -285,25 +292,17 @@ public class LobbyManager : Singleton<LobbyManager>
 
             Debug.Log($"Old Name: {tempPlayerNameInLobby} | " % Colorize.Orange % FontFormat.Bold + $"New Name: {newPlayerName}" % Colorize.Yellow % FontFormat.Bold);
             Debug.Log($"Lobby: {activeLobby.Name} | Lobby ID: {activeLobby.Id}" % Colorize.Green % FontFormat.Bold);
-            Debug.Log($"Player ID: {AuthenticationService.Instance.PlayerId}" % Colorize.Blue % FontFormat.Bold);
+            Debug.Log($"Player ID: {AuthenticationService.Instance.PlayerId}" % Colorize.Orange % FontFormat.Bold);
             tempPlayerNameInLobby = newPlayerName;
 
             UpdatePlayerOptions options = new UpdatePlayerOptions();
             options.Data = new Dictionary<string, PlayerDataObject>()
             {
-                    {PlayerNameConst, new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, tempPlayerNameInLobby)},
-                    {LobbyMapConst, new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, "Test Mappa") }
+                {PlayerNameConst, new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, newPlayerName)},
             };
 
-            await LobbyService.Instance.UpdatePlayerAsync(activeLobby.Id, AuthenticationService.Instance.PlayerId, options);
-
-            for (int i = 0; i < activeLobby.Players.Count; i++)
-            {
-                Player player = activeLobby.Players[i];
-                Debug.Log($"{i + 1} : Player Name: {player.Data[PlayerNameConst].Value}" % Colorize.Green % FontFormat.Bold);
-            }
-
-            Debug.Log($"Lobby {activeLobby.Name}" % Colorize.Yellow % FontFormat.Bold);
+            Lobby lobby = await LobbyService.Instance.UpdatePlayerAsync(activeLobby.Id, AuthenticationService.Instance.PlayerId, options);
+            PrintPlayers(lobby);
         }
         catch (LobbyServiceException e)
         {
