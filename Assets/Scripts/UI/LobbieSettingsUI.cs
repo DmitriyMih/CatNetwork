@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using DG.Tweening;
+using System;
 
 public class LobbieSettingsUI : MonoBehaviour
 {
@@ -30,11 +31,15 @@ public class LobbieSettingsUI : MonoBehaviour
     [Header("Lobby Data"), Space()]
     [SerializeField] private LobbySettingsSO lobbySettings;
 
+    public Action PanelToDefaultClick;
+
     private void Awake()
     {
         if (createLobbyButton != null)
             createLobbyButton.onClick.AddListener(() => CreateLobbySettingsSO());
         else Debug.Log("Create Button " % Colorize.Yellow % FontFormat.Bold + "| Is Null |" % Colorize.Red % FontFormat.Bold);
+
+        PanelToDefaultClick = ToDefault;
     }
 
     private void CreateLobbySettingsSO()
@@ -116,8 +121,23 @@ public class LobbieSettingsUI : MonoBehaviour
         if (!isChecks)
             return;
 
+        createLobbyButton.interactable = false;
         lobbySettings = lobbySettingsSO;
+
         LobbyManager.Instance.CreateLobby(lobbySettingsSO);
+        LobbyPanelsManager.Instance.LoadPanel(LobbyPanel.LobbyPanel);
+        ToDefault();
+    }
+
+    private void ToDefault()
+    {
+        createLobbyButton.interactable = true;
+
+        if (lobbyNameInputField != null)
+            lobbyNameInputField.text = "";
+
+        if (passwordInputField != null)
+            passwordInputField.text = "";
     }
 
     private IEnumerator FadeNotice(CanvasGroup canvasGroup, float fadeTime)

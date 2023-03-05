@@ -6,15 +6,28 @@ using Unity.Services.Lobbies;
 using Unity.Services.Lobbies.Models;
 using UnityEngine;
 
+public enum LobbyType
+{
+    Host,
+    Joined
+}
+
 public class LobbyManager : Singleton<LobbyManager>
 {
-    private Lobby hostLobby;
-    private Lobby joinedLobby;
+    public const string LobbyMapConst = "Map";
+    public const string PlayerNameConst = "PlayerName";
+
+    [SerializeField] private Lobby activeLobby;
+    [SerializeField] private LobbyType currentLobbyType;
 
     private float heartbeatTimerMax = 15f;
     private float heartbeatTimer;
 
-    [SerializeField] private string playerName;
+    private float lobbyUpdateTimerMax = 1.1f;
+    private float lobbyUpdateTimer;
+
+    [SerializeField] private string tempPlayerNameInLobby;
+    [SerializeField] private string tempLobbyCode;
 
     private async void Start()
     {
@@ -25,7 +38,7 @@ public class LobbyManager : Singleton<LobbyManager>
             Debug.Log("Signed In " + AuthenticationService.Instance.PlayerId % Colorize.Green % FontFormat.Bold);
         };
 
-        playerName = "Player " + Random.Range(10, 99);
+        tempPlayerNameInLobby = "Player " + Random.Range(10, 99);
         await AuthenticationService.Instance.SignInAnonymouslyAsync();
     }
 
@@ -36,17 +49,47 @@ public class LobbyManager : Singleton<LobbyManager>
 
     private async void HandleLobbyHeartbeat()
     {
-        if (hostLobby != null)
-        {
-            if (heartbeatTimer <= 0)
-            {
-                heartbeatTimer = heartbeatTimerMax;
+        if (activeLobby == null)
+            return;
 
-                await LobbyService.Instance.SendHeartbeatPingAsync(hostLobby.Id);
-            }
-            else
-                heartbeatTimer -= Time.deltaTime;
+        if (currentLobbyType != LobbyType.Host)
+            return;
+
+        if (heartbeatTimer <= 0)
+        {
+            heartbeatTimer = heartbeatTimerMax;
+            await LobbyService.Instance.SendHeartbeatPingAsync(activeLobby.Id);
         }
+        else
+            heartbeatTimer -= Time.deltaTime;
+    }
+
+    //  Update Lobby
+    private async void HandleLobbyPollForUpdates()
+    {
+        if (activeLobby == null)
+            return;
+
+        if (currentLobbyType != LobbyType.Joined)
+            return;
+
+        if (lobbyUpdateTimer <= 0)
+        {
+            lobbyUpdateTimer = lobbyUpdateTimerMax;
+            Lobby lobby = await LobbyService.Instance.GetLobbyAsync(activeLobby.Id);
+            activeLobby = lobby;
+        }
+        else
+            lobbyUpdateTimer -= Time.deltaTime;
+    }
+
+    private async void StopLobby()
+    {
+        if (activeLobby == null)
+            return;
+
+        await LobbyService.Instance.DeleteLobbyAsync(activeLobby.Id);
+        Debug.Log("Stop Lobby" % Colorize.DarkOrange % FontFormat.Bold);
     }
 
     public async void CreateLobby(LobbySettingsSO lobbySettingsSO)
@@ -59,22 +102,103 @@ public class LobbyManager : Singleton<LobbyManager>
                 Player = GetPlayer(),
                 Data = new Dictionary<string, DataObject>
                 {
-                    { "Map", new DataObject(DataObject.VisibilityOptions.Public, "First_Map", DataObject.IndexOptions.S1)}
+                    { LobbyMapConst, new DataObject(DataObject.VisibilityOptions.Public, "First_Map", DataObject.IndexOptions.S1)}
                 }
             };
 
             Lobby lobby = await LobbyService.Instance.CreateLobbyAsync(lobbySettingsSO.lobbyName, lobbySettingsSO.playersMaxCount, createLobbyOptions);
-            Debug.Log($"Create Lobby! {lobby.Name} | Map {lobby.Data["Map"].Value} | Players Max { lobby.MaxPlayers} | Lobby ID: {lobby.Id} | Lobby Code {lobby.LobbyCode}" % Colorize.Green % FontFormat.Bold);
+            Debug.Log($"Create Lobby! {lobby.Name} | Map {lobby.Data[LobbyMapConst].Value} | Players Max { lobby.MaxPlayers} | Lobby ID: {lobby.Id} | Lobby Code {lobby.LobbyCode}" % Colorize.Green % FontFormat.Bold);
 
-            hostLobby = lobby;
-            joinedLobby = hostLobby;
+            if (activeLobby != null)
+                StopLobby();
 
-            PrintPlayers(hostLobby);
+            activeLobby = lobby;
+            currentLobbyType = LobbyType.Host;
+
+            PrintPlayers(activeLobby);
         }
         catch (LobbyServiceException e)
         {
             Debug.Log(e);
         }
+    }
+
+    [ContextMenu("Lobby Manager / Join Lobbies")]
+    private async void JoinLobby()
+    {
+        try
+        {
+            QueryResponse queryResponse = await Lobbies.Instance.QueryLobbiesAsync();
+            Lobby lobby = await Lobbies.Instance.JoinLobbyByIdAsync(queryResponse.Results[0].Id);
+
+            if (activeLobby != null)
+                StopLobby();
+
+            activeLobby = lobby;
+            currentLobbyType = LobbyType.Joined;
+
+            Debug.Log($"Joined Lobby: {tempLobbyCode}" % Colorize.Green % FontFormat.Bold);
+            PrintPlayers(lobby);
+        }
+        catch (LobbyServiceException e)
+        {
+            Debug.Log(e);
+        }
+    }
+
+    [ContextMenu("Lobby Manager / Join Lobbies")]
+    private void JoinByCode()
+    {
+        JoinLobbyByCode(tempLobbyCode);
+    }
+
+    public async void JoinLobbyByCode(string lobbyCode)
+    {
+        try
+        {
+            JoinLobbyByCodeOptions joinLobbyByCodeOptions = new JoinLobbyByCodeOptions
+            {
+                Player = GetPlayer()
+            };
+            Lobby lobby = await Lobbies.Instance.JoinLobbyByCodeAsync(lobbyCode, joinLobbyByCodeOptions);
+
+            if (activeLobby != null)
+                StopLobby();
+
+            activeLobby = lobby;
+            currentLobbyType = LobbyType.Joined;
+
+            Debug.Log($"Joined Lobby With Code: {lobbyCode}" % Colorize.Green % FontFormat.Bold);
+            PrintPlayers(lobby);
+        }
+        catch (LobbyServiceException e)
+        {
+            Debug.Log(e);
+        }
+    }
+
+    [ContextMenu("Lobby Manager / Quick Join Lobby")]
+    private async void QuickJoinLobby()
+    {
+        try
+        {
+            await LobbyService.Instance.QuickJoinLobbyAsync();
+        }
+        catch (LobbyServiceException e)
+        {
+            Debug.Log(e);
+        }
+    }
+
+    private Player GetPlayer()
+    {
+        return new Player
+        {
+            Data = new Dictionary<string, PlayerDataObject>
+            {
+                {PlayerNameConst, new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, tempPlayerNameInLobby) }
+            }
+        };
     }
 
     [ContextMenu("Lobby Manager / Show List Lobbies")]
@@ -117,87 +241,73 @@ public class LobbyManager : Singleton<LobbyManager>
 
             Debug.Log("Lobbies Found: " + queryResponse.Results.Count.ToString() % Colorize.Yellow % FontFormat.Bold);
             for (int i = 0; i < queryResponse.Results.Count; i++)
-                Debug.Log($"{i + 1}: Lobby Name: {queryResponse.Results[i].Name} | Lobby Mode {queryResponse.Results[i].Data["Map"].Value}| " % Colorize.Yellow % FontFormat.Bold + $"Players: {queryResponse.Results[i].Players.Count}/{queryResponse.Results[i].MaxPlayers}" % Colorize.Green % FontFormat.Bold);
+                Debug.Log($"{i + 1}: Lobby Name: {queryResponse.Results[i].Name} | Lobby Mode {queryResponse.Results[i].Data[LobbyMapConst].Value}| " % Colorize.Yellow % FontFormat.Bold + $"Players: {queryResponse.Results[i].Players.Count}/{queryResponse.Results[i].MaxPlayers}" % Colorize.Green % FontFormat.Bold);
         }
         catch (LobbyServiceException e)
         {
             Debug.Log(e);
         }
-    }
-
-    [ContextMenu("Lobby Manager / Join Lobbies")]
-    private async void JoinLobby()
-    {
-        try
-        {
-            QueryResponse queryResponse = await Lobbies.Instance.QueryLobbiesAsync();
-            await Lobbies.Instance.JoinLobbyByIdAsync(queryResponse.Results[0].Id);
-
-            Debug.Log("Joined Lobby");
-        }
-        catch (LobbyServiceException e)
-        {
-            Debug.Log(e);
-        }
-    }
-
-    [SerializeField] private string lobbyCode;
-    [ContextMenu("Lobby Manager / Join Lobbies")]
-    private void JoinByCode()
-    {
-        JoinLobbyByCode(lobbyCode);
-    }
-
-    public async void JoinLobbyByCode(string lobbyCode)
-    {
-        try
-        {
-            JoinLobbyByCodeOptions joinLobbyByCodeOptions = new JoinLobbyByCodeOptions
-            {
-                Player = GetPlayer()
-            };
-            Lobby lobby = await Lobbies.Instance.JoinLobbyByCodeAsync(lobbyCode, joinLobbyByCodeOptions);
-            joinedLobby = lobby;
-
-            Debug.Log($"Joined Lobby With Code: {lobbyCode}" % Colorize.Green % FontFormat.Bold);
-            PrintPlayers(lobby);
-        }
-        catch (LobbyServiceException e)
-        {
-            Debug.Log(e);
-        }
-    }
-
-    [ContextMenu("Lobby Manager / Quick Join Lobby")]
-    private async void QuickJoinLobby()
-    {
-        try
-        {
-            await LobbyService.Instance.QuickJoinLobbyAsync();
-        }
-        catch (LobbyServiceException e)
-        {
-            Debug.Log(e);
-        }
-    }
-
-    private Player GetPlayer()
-    {
-        return new Player
-        {
-            Data = new Dictionary<string, PlayerDataObject> { { "PlayerName", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, playerName) } }
-        };
     }
 
     public void PrintPlayers()
     {
-        PrintPlayers(joinedLobby);
+        if (activeLobby == null)
+            return;
+
+        PrintPlayers(activeLobby);
     }
 
     private void PrintPlayers(Lobby lobby)
     {
-        Debug.Log($"Players In Lobby: {lobby.Name} | Game Mode {lobby.Data["Map"].Value}");
-        foreach (Player player in lobby.Players)
-            Debug.Log(player.Id % Colorize.Yellow % FontFormat.Bold + " " + player.Data["PlayerName"].Value % Colorize.Green % FontFormat.Bold);
+        Debug.Log($"Players In Lobby: {lobby.Name} | Players: {lobby.Players.Count} | Game Map: {lobby.Data[LobbyMapConst].Value} | Lobby Code: {lobby.LobbyCode}" % Colorize.Orange % FontFormat.Bold);
+        for (int i = 0; i < lobby.Players.Count; i++)
+        {
+            Player player = lobby.Players[i];
+            Debug.Log($"{i + 1}: Player Name: {player.Data[PlayerNameConst].Value} | " % Colorize.Yellow % FontFormat.Bold + $"Player Id: {player.Id}" % Colorize.Green % FontFormat.Bold);
+        }
+    }
+
+    [ContextMenu("Update Player")]
+    private void UpdatePlayer()
+    {
+        UpdatePlayerName(tempPlayerNameInLobby);
+    }
+
+    public async void UpdatePlayerName(string newPlayerName)
+    {
+        try
+        {
+            if (newPlayerName == "")
+                return;
+
+            if (activeLobby == null)
+                return;
+
+            Debug.Log($"Old Name: {tempPlayerNameInLobby} | " % Colorize.Orange % FontFormat.Bold + $"New Name: {newPlayerName}" % Colorize.Yellow % FontFormat.Bold);
+            Debug.Log($"Lobby: {activeLobby.Name} | Lobby ID: {activeLobby.Id}" % Colorize.Green % FontFormat.Bold);
+            Debug.Log($"Player ID: {AuthenticationService.Instance.PlayerId}" % Colorize.Blue % FontFormat.Bold);
+            tempPlayerNameInLobby = newPlayerName;
+
+            UpdatePlayerOptions options = new UpdatePlayerOptions();
+            options.Data = new Dictionary<string, PlayerDataObject>()
+            {
+                    {PlayerNameConst, new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, tempPlayerNameInLobby)},
+                    {LobbyMapConst, new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, "Test Mappa") }
+            };
+
+            await LobbyService.Instance.UpdatePlayerAsync(activeLobby.Id, AuthenticationService.Instance.PlayerId, options);
+
+            for (int i = 0; i < activeLobby.Players.Count; i++)
+            {
+                Player player = activeLobby.Players[i];
+                Debug.Log($"{i + 1} : Player Name: {player.Data[PlayerNameConst].Value}" % Colorize.Green % FontFormat.Bold);
+            }
+
+            Debug.Log($"Lobby {activeLobby.Name}" % Colorize.Yellow % FontFormat.Bold);
+        }
+        catch (LobbyServiceException e)
+        {
+            Debug.Log(e);
+        }
     }
 }

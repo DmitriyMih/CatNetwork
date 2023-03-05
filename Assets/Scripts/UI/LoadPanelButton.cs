@@ -6,10 +6,10 @@ using UnityEngine.UI;
 [RequireComponent(typeof(Button))]
 public class LoadPanelButton : MonoBehaviour
 {
-    private Button loadButton;
+    protected Button loadButton;
     [SerializeField] private LobbyPanel nextLobbyPanel;
 
-    private void Awake()
+    protected virtual void Awake()
     {
         loadButton = GetComponent<Button>();
 
